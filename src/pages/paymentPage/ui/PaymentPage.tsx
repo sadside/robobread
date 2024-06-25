@@ -1,13 +1,60 @@
 import sbp from 'src/assets/sbp.svg'
-import qr from 'src/assets/qr-test.png'
+// import qr from 'src/assets/qr-test.png'
 import {Link} from "react-router-dom";
 import info from "src/assets/info.svg";
 import success from "src/assets/paySuccesfull.png";
 import {changeVisibleContacts} from "src/entities/contacts/model/contact-model.ts";
+import { createPayementFx, getQrFx } from '../model/payment-model';
+import { createOrderFx } from '../model/order-model';
+import { useEffect, useState } from 'react';
+import { API_URL_CLIENT } from 'src/shared/api/http/axios-instance';
 
 
 export const PaymentPage = () => {
-    let pay = true
+    const [qr, setQr] = useState("");
+    const [paymentId, setPaymentId] = useState("");
+    const [pay, setPay] = useState(false);
+    const [price, setPrice] = useState(0);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        //@ts-ignore
+        const productId = parseInt(params.get('productId'));
+        createOrderFx(productId).then((order) => {
+            createPayementFx(order.id).then((payment) => {
+                console.log(payment)
+
+                setPaymentId(payment.id)
+                setPrice(payment.amount)
+
+                getQrFx(payment.id).then((qr) => {
+                    setQr(qr)
+                })
+            })
+        });
+    }, []);
+
+    useEffect(() => {
+        let intervalId: number;
+
+        const checkPaymentStatus = async () => {
+            const response = await fetch(`${API_URL_CLIENT}payment/payment?payment_id=${paymentId}`);
+            const data = await response.json();
+            if (data.status == 'CONFIRMED' || data.status == 'AUTHORIZED') {
+                setPay(true);
+                clearInterval(intervalId);
+            }
+        };
+
+        intervalId = setInterval(checkPaymentStatus, 3000);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [paymentId]);
+
+    
+
     return (
         <>
             <div className='flex flex-col h-full items-center'>
@@ -21,11 +68,11 @@ export const PaymentPage = () => {
                         </div>
                         <div
                             className='mt-[50px] bg-cardProductComposition justify-center rounded-[80px] flex items-center w-[584px] h-[584px]'>
-                            <img src={qr} alt={'qr'}/>
+                            <div dangerouslySetInnerHTML={{ __html: qr }} />
                         </div>
                         <div className='mt-[80px]'>
                             <div className='text-[38px] font-bold text-textGreySecond h-[]'>К оплате:</div>
-                            <div className='font-black text-[68px]'>100,00 ₽</div>
+                            <div className='font-black text-[68px]'>{price / 100},00 ₽</div>
                         </div>
                     </>
                     :

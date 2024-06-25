@@ -26,7 +26,7 @@ export const ProductCard = ({product}: Props) => {
             <div className='bg-layoutLine rounded-[28px] mt-[42px] px-[52px] py-[24px] text-[56px] font-bold'>
                 {(product.price/100).toFixed(2) + ' ₽'}
             </div>
-            <PaymentProduct/>
+            <PaymentProduct product={product}/>
             <div className=' w-full mt-[70px] h-full relative '>
                 <div
                     className='border-t-[5px] w-full flex justify-between absolute min-h-[160px] h-[80%] max-h-[233px] bottom-0 border-layoutLine'>
